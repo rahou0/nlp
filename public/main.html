@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>    
+    <meta http-equiv='Content-Type' content='text/html;charset=utf-8'></meta>
+    <link rel="shortcut icon" type="image/png" href="/logo.png"/>
+
+    <script type='text/javascript' src='lib/x3dom/x3dom.js'> </script>
+    <link rel='stylesheet' type='text/css' href='lib/x3dom/x3dom.css'/>
+    <link
+      href="lib/bootstrap/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <script language="JavaScript" type="text/javascript" src="/lib/jquery-3.6.0.min.js"></script>
+    <script  src="/lib/treeView/bootstrap-treeview.min.js" ></script>
+
+    <link rel="stylesheet" href="main.css" />
+    <link rel="stylesheet" href="/lib/treeView/bootstrap-treeview.min.css" />
+    <title>Scene builder</title>
+  </head>
+  <body>
+    <div id="container">
+      <div id="left">
+        <h4>Scene Objects</h4>
+        <div id="tree"></div>
+
+        </div>
+      <div id="middle">
+        <div id="top">
+          <p>NAvigation View</p>
+          <button type="button" class="btn btn-primary btn-sm">Rotate</button>
+          <button type="button" class="btn btn-primary btn-sm">Translate</button>
+
+        </div>
+        <div id="center">
+          <x3d
+            id="x3dElement"
+            showStat="false"
+            showLog="false"
+          >
+            <scene DEF="scene" id="scene3d">
+                <viewpoint
+                position="13.71854 10.00018 18.01263"
+                orientation="-0.66475 0.73173 0.15059 0.81072"
+              >
+              </viewpoint>
+              <!-- <transform id="shapeTranslation">
+                <matrixTransform id="shapeRotation">
+                  <inline url="/shapes/teapot.x3d"></inline>
+                </matrixTransform>
+              </transform> -->
+            
+              <NavigationInfo type="none"> </NavigationInfo>
+            </scene>
+          </x3d>
+        </div>
+        <div id="bottom">
+          <div id="search_container">
+            <input class="form-control" typlaceholder="Search" id="search" type="text">
+            <input placeholder="Search" id="search" type="text" />
+          </div>
+          <div id="objects_container">
+          </div>
+        </div>
+        <!-- bottom -->
+      </div>
+      <!-- middle -->
+      <div id="right">
+        <h5>Shape params</h5>
+      </div>
+      <!-- Modal -->
+      <div class="modal fade" id="shapeUpdate" tabindex="-1" aria-labelledby="modeltitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable" id="modelstyle">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modeltitle">Modal title</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modelbody">
+              <div id="modalleft"><h1>Modal Body Left</h1></div>
+              <div id="modalcenter"><pre contenteditable="true"> <code id='modelbodydata' class="javascript"></code></pre></div>
+              <div id="modalright"><h1>Modal Body Right</h1></div>
+              <!-- <pre contenteditable="true"> <code id='modelbodydata' class="javascript"></code></pre> -->
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- container -->
+    <script
+    src="lib/bootstrap/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"
+  ></script>
+    <script src="main.js"></script>
+    <script src="rotationController.js"></script>
+
+  </body>
+</html>

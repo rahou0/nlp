@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html style='width:100%; height:100%; border:0; margin:0; padding:0;'>
+  
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>    
+    <meta http-equiv='Content-Type' content='text/html;charset=utf-8'></meta>
+    <script type='text/javascript' src='https://www.x3dom.org/download/x3dom.js'> </script>
+    <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'/>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    
+  </head>
+  <script>
+    var currentGizmoRotation       = new x3dom.fields.SFMatrix4f();
+    var currentGizmoRotationOffset = new x3dom.fields.SFMatrix4f();
+    	
+    /*
+     * Callback function, invoked on rotation gizmo output.
+     */
+    function processRotationGizmoEvent(event)
+    {		
+        console.log('here')
+        var sensorToWorldMatrix, rotationMatrixWorld;
+   
+        if (event.fieldName === 'rotation_changed')
+        {
+            //convert the sensor's output from sensor coordinates to world coordinates (i.e., include its 'axisRotation')
+            sensorToWorldMatrix = x3dom.fields.SFMatrix4f.parseRotation(event.target.getAttribute("axisRotation"));			
+			rotationMatrixWorld = sensorToWorldMatrix.mult(event.value.toMatrix());
+			
+			//create an offset that applies the current rotation in world coordinates,
+			//but doesn't change the orientation of the coordinate system
+            currentGizmoRotationOffset = rotationMatrixWorld.mult(sensorToWorldMatrix.inverse());			
+			
+            applyRotationGizmoTransformations();
+        }
+
+        if (event.fieldName === 'isActive' && event.value === false)
+        {
+            //incorporate the current rotation offset, interpreted globally, into the stored rotation value
+            currentGizmoRotation = currentGizmoRotationOffset.mult(currentGizmoRotation);
+			
+			//reset current rotation offset to zero rotation
+            currentGizmoRotationOffset = new x3dom.fields.SFMatrix4f();
+
+            applyRotationGizmoTransformations();
+        }
+    }
+	    
+    /*
+     * Applies the current transformations, computed from the rotation gizmo output, to the scene
+     */
+    function applyRotationGizmoTransformations()
+    {
+        console.log("hi")
+        var teapotRotationNode = document.getElementById('shapeRotation');
+        
+		//incorporate the current rotation offset, interpreted globally, into the stored rotation value
+        var transformMatrix = currentGizmoRotationOffset.mult(currentGizmoRotation);
+        
+        //set matrix value in column major format, as required by the MatrixTransform node
+        teapotRotationNode.setFieldValue("matrix", transformMatrix.transpose());
+    }
+  </script>
+  <body style='width:50%; height:50%; border:0; margin:0; padding:0; background: linear-gradient(Grey 0%, White 50%);'>
+  
+    <div id='litlediv'></div>
+    <x3d id='x3dElement' showStat='false' showLog='false' style='width:100%; height:100%; border:0' >
+        <scene DEF='scene' id="scene3d">
+			<viewpoint position="13.71854 10.00018 18.01263" orientation="-0.66475 0.73173 0.15059 0.81072"></viewpoint>
+       <!-- EXAMPLE TEAPOT SHAPE -->
+			<transform id="shapeTranslation">
+				<matrixTransform id="shapeRotation">
+			<inline url="/3Dobject/deer.x3d" ></inline>
+				</matrixTransform>
+			</transform>
+      <transform id="shapeTranslation" translation='0 -2 0'>
+				<matrixTransform id="shapeRotation">
+			<inline url="/3Dobject/deer.x3d" ></inline>
+				</matrixTransform>
+			</transform>
+			<transform id='rotationHandleTransform'>
+            </transform>
+            <NavigationInfo type="none">
+
+        </scene>
+
+    </x3d>
+        <script>
+          //  const transform = document.getElementById("rotationHandleTransform");
+          //  const inline = document.createElement("inline");
+          //  inline.setAttribute("url","/3Dobject/deer.x3d")
+          //  inline.setAttribute("id","shape")
+          // transform.appendChild(inline);
+       </script>
+       <button onclick="handleClick('deer.x3d')">Deer</button>
+       <button onclick="handleClick('cone.x3d')">Cone</button>
+       <button onclick="handleClick('anchor.x3d')">Anchor</button>
+       <button onclick="handleClick('cube.x3d')">Cube</button>
+       <button onclick="handleClick('cylender.x3d')">cylinder</button>
+       <button onclick="handleClick('sphere.x3d')">Sphere</button>
+       <button onclick="handleClick('sphere.x3d')">Sphere</button>
+       <button onclick="ActiveAxis()" >active</button>
+       <button onclick="ActiveAxis()" >disable</button>
+       <!-- <button style="{color:green;} :hover { color: red; }" onclick="handleRotationClick()" active>Rotation</button> -->
+       <button onclick="handleMovementClick()">Translation</button>
+       <script src="rotationController.js"></script>
+       <script src="index.js"></script>
+
+      </body>
+  
+</html>

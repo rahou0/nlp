@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.3//EN" "https://www.web3d.org/specifications/x3d-3.3.dtd">
+<X3D profile='Interchange' version='3.3'
+  xmlns:xsd='http://www.w3.org/2001/XMLSchema-instance' xsd:noNamespaceSchemaLocation =' https://www.web3d.org/specifications/x3d-3.3.xsd '>
+  <head>
+    <meta name='title' content='anchor.x3d'/>
+  </head>
+  <Scene>
+    <Anchor url='"https://www.torn.com/index.php"'>
+      <Shape>
+        <Text string ="hello this is anchor">
+          <FontStyle USE='LocalFontStyle'/>
+        </Text>
+        <Appearance>
+          <Material DEF='MaterialLightBlue' diffuseColor='0 1 1'/>
+        </Appearance>
+      </Shape>
+    </Anchor>
+  </Scene>
+</X3D>

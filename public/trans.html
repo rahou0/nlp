@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html style='width:100%; height:100%; border:0; margin:0; padding:0;'>
+  
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>    
+    <meta http-equiv='Content-Type' content='text/html;charset=utf-8'></meta>
+    <script type='text/javascript' src='https://www.x3dom.org/download/x3dom.js'> </script>
+    <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'/>
+  </head>
+  
+  <style>    
+    #inputTypeLabel
+    {
+        position:fixed;            
+        left:0;
+        top:0;
+        
+        width:200px;
+        
+        margin:24px;
+        padding:8px;            
+        
+        background:#888888;
+        background: linear-gradient(#BBBBBB, #888888); 
+        border-radius:8px;
+        border:2px solid #EEEEEE;
+        
+        box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.25);
+        
+        font-weight:bold;
+        color:white;
+        
+        z-index:20000;
+    }
+  </style>
+  
+  <script>
+    var currentGizmoRotation       = new x3dom.fields.SFMatrix4f();
+    var currentGizmoRotationOffset = new x3dom.fields.SFMatrix4f();
+    
+	/*
+     * Callback function, invoked on translation gizmo output.
+     */
+    function processTranslationGizmoEvent(event)
+    {
+		var sensorToWorldMatrix, translationValue;
+		
+		if (event.fieldName === 'translation_changed')
+        {
+			//convert the sensor's output from sensor coordinates to world coordinates (i.e., include its 'axisRotation')
+            sensorToWorldMatrix = x3dom.fields.SFMatrix4f.parseRotation(event.target.getAttribute("axisRotation"));	
+			
+			translationValue = sensorToWorldMatrix.multMatrixVec(event.value);
+			
+			//transform the affected sensor geometry
+			document.getElementById('translationHandleTransform').setFieldValue('translation', translationValue);
+			document.getElementById('rotationHandleTransform').setFieldValue('translation', translationValue);
+			
+			//transform the affected element
+			document.getElementById('teapotTranslation').setFieldValue('translation', translationValue);			
+		}
+	}	
+	
+    /*
+     * Callback function, invoked on rotation gizmo output.
+     */
+    function processRotationGizmoEvent(event)
+    {		
+        var sensorToWorldMatrix, rotationMatrixWorld;
+   
+        if (event.fieldName === 'rotation_changed')
+        {
+            //convert the sensor's output from sensor coordinates to world coordinates (i.e., include its 'axisRotation')
+            sensorToWorldMatrix = x3dom.fields.SFMatrix4f.parseRotation(event.target.getAttribute("axisRotation"));			
+			rotationMatrixWorld = sensorToWorldMatrix.mult(event.value.toMatrix());
+			
+			//create an offset that applies the current rotation in world coordinates,
+			//but doesn't change the orientation of the coordinate system
+            currentGizmoRotationOffset = rotationMatrixWorld.mult(sensorToWorldMatrix.inverse());			
+			
+            applyRotationGizmoTransformations();
+        }
+
+        if (event.fieldName === 'isActive' && event.value === false)
+        {
+            //incorporate the current rotation offset, interpreted globally, into the stored rotation value
+            currentGizmoRotation = currentGizmoRotationOffset.mult(currentGizmoRotation);
+			
+			//reset current rotation offset to zero rotation
+            currentGizmoRotationOffset = new x3dom.fields.SFMatrix4f();
+
+            applyRotationGizmoTransformations();
+        }
+    }
+	    
+    /*
+     * Applies the current transformations, computed from the rotation gizmo output, to the scene
+     */
+     function applyRotationGizmoTransformations()
+    {
+        var teapotRotationNode = document.getElementById('teapotRotation');
+        
+		//incorporate the current rotation offset, interpreted globally, into the stored rotation value
+        var transformMatrix = currentGizmoRotationOffset.mult(currentGizmoRotation);
+        
+        //set matrix value in column major format, as required by the MatrixTransform node
+        teapotRotationNode.setFieldValue("matrix", transformMatrix.transpose());
+    }
+  </script>
+  
+  <body style='width:100%; height:100%; border:0; margin:0; padding:0; background: linear-gradient(Grey 0%, White 100%);'>
+    <x3d id='x3dElement' showStat='false' showLog='false' style='width:100%; height:100%; border:0' >
+        <scene DEF='scene'>
+			<!-- <viewpoint position="13.71854 10.00018 18.01263" orientation="-0.66475 0.73173 0.15059 0.81072"></viewpoint> -->
+            
+              <transform scale="0.5 0.5 0.5">
+                <shape DEF='CONE_CAP'>
+                    <appearance DEF='CYAN_MAT'><material diffuseColor='0 1 1'></material></appearance>
+                    <cone height='1'></cone>
+                </shape>
+            </transform>
+            
+			<!-- TRANSLATION GIZMO (CONTAINING PLANE SENSOR AND SENSOR GEOMETRY) -->
+			<group>
+				<planeSensor autoOffset='true' axisRotation='1 0 0 -1.57' minPosition='-6 0' maxPosition='6 0' onoutputchange='processTranslationGizmoEvent(event)'>
+				</planeSensor>
+				
+				<transform id='translationHandleTransform'>
+					<transform translation='0 -5.5 8' rotation='0 1 0 1.57'>	
+                        <!-- x axis translation				 -->
+						<transform translation='0 0 4.25' rotation='1 0 0 1.57' scale="0.5 0.5 0.5">
+							<shape DEF='CONE_CAP'>
+								<appearance DEF='CYAN_MAT'><material diffuseColor='0 1 1'></material></appearance>
+								<cone height='1'></cone>
+							</shape>
+						</transform>
+						<transform rotation='1 0 0 -1.57' scale="0.3 4 0.3">							
+							<shape>
+								<appearance USE='CYAN_MAT'></appearance>
+								<cylinder></cylinder>
+							</shape>
+						</transform>
+                        <!-- z axis translation				 -->
+                        <transform translation='0 4.25 0'  scale="0.5 0.5 0.5">
+							<shape DEF='CONE_CAP'>
+								<appearance DEF='CYAN_MAT'><material diffuseColor='0.8 1 1'></material></appearance>
+								<cone height='1'></cone>
+							</shape>
+						</transform>
+						<transform  scale="0.3 4 0.3">							
+							<shape>
+								<appearance USE='CYAN_MAT'></appearance>
+								<cylinder></cylinder>
+							</shape>
+						</transform>
+                        <!-- y axis translation				 -->
+                        <transform translation='4.25 0 0' rotation='1 0 0 1.57' scale="0.5 0.5 0.5">
+							<shape DEF='CONE_CAP'>
+								<appearance DEF='CYAN_MAT'><material diffuseColor='1 0.3 1'></material></appearance>
+								<cone height='1'></cone>
+							</shape>
+						</transform>
+						<transform rotation='1 0 1.5 -1.57' scale="0.3 4 0.3">							
+							<shape>
+								<appearance USE='CYAN_MAT'></appearance>
+								<cylinder></cylinder>
+							</shape>
+						</transform>
+						<!-- <transform translation='0 0 -1.5' rotation='1 0 0 -1.57'>
+							<shape USE='CONE_CAP'></shape>
+						</transform> -->
+					</transform>						
+				</transform>				
+			</group>
+
+            <!-- <NavigationInfo type="none"> </NavigationInfo> -->
+
+        </scene>
+    </x3d>
+  </body>
+  
+</html>
