@@ -78,7 +78,7 @@ const axisRotation = {
     },
   },
 };
-const createRotationAxis = () => {
+const createRotationAxis3 = () => {
   const threeAxis = ["x", "y", "z"];
   const rotationAxis = document.getElementById("rotationHandleTransform");
   for (let direction of threeAxis) {

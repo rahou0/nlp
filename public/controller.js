@@ -1,4 +1,4 @@
-const axis = {
+const axisk = {
   x: {
     color: "1 0.3 0.3",
     autoOffset: "autoOffset='false'",
@@ -18,7 +18,7 @@ const axis = {
     rotation: "rotation='0 1 0 -1.57'",
   },
 };
-const createRotationAxis = (axis) => {
+const createRotationAxis1 = (axis) => {
   return `
   <group>
   <cylinderSensor ${axis.autoOffset} ${axis.axisRotation} onoutputchange='processRotationGizmoEvent(event);'>

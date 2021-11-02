@@ -1,6 +1,11 @@
 var mytree = [];
 var object_counter = 1;
 var selected_node = null;
+var control_type = null;
+var currentGizmoRotation = new x3dom.fields.SFMatrix4f();
+var clicked = null;
+var currentGizmoRotationOffset = new x3dom.fields.SFMatrix4f();
+var i = 1;
 const axis = {
   x: {
     color: "1 0.3 0.3",
@@ -41,22 +46,90 @@ const insertShapeToScene = (name, url) => {
     text: `${id} ${creatDeleteShapeButton(id)} ${creatUpdateShapeButton(id)}`,
     id: id,
   });
+  selected_node = id;
+  $("#selected_shape").text(selected_node);
   const new_object = ` <transform id='T_${id}'> <matrixTransform id='R_${id}'>   <inline url='${url}'></inline> </matrixTransform></transform>`;
   $("#scene3d").append(new_object);
-  const x_axis= createRotationAxis(axis.x);
-  const y_axis= createRotationAxis(axis.y);
-  const z_axis= createRotationAxis(axis.z);
-  $(`#T_${id}`).append(new_object);
+  $("#t_x").val(0);
+  $("#t_y").val(0);
+  $("#t_z").val(0);
+  $("#r_x").val(0);
+  $("#r_y").val(0);
+  $("#r_z").val(0);
+  if (control_type == null) control_type = "r_btn";
+  console.log(control_type == null);
+  switch (control_type) {
+    case "r_btn":
+      $(".rotationAxisControllers").remove();
+      $(`#T_${id}`).append(createRotationAxis(axis.x));
+      $(`#T_${id}`).append(createRotationAxis(axis.y));
+      $(`#T_${id}`).append(createRotationAxis(axis.z));
+      $(".view").removeClass("btn-primary").addClass("btn-secondary");
+      $("#r_btn").removeClass("btn-secondary").addClass("btn-primary");
+      break;
+    case "t_btn":
+      $(".translationAxisControllers").remove();
+      $(`#T_${selected_node}`).append(createTranslationAxis(""));
+      $(".view").removeClass("btn-primary").addClass("btn-secondary");
+      $("#t_btn").removeClass("btn-secondary").addClass("btn-primary");
+      break;
+    default:
+      $(".view").removeClass("btn-primary").addClass("btn-secondary");
+      $("#n_btn").removeClass("btn-secondary").addClass("btn-primary");
+      break;
+  }
   $("#tree").treeview({
     data: mytree,
     onNodeSelected: function (event, data) {
-      console.log(event);
-      // console.log(data.id);
+      if (selected_node === data.id) return;
+      selected_node = data.id;
+      $("#selected_shape").text(selected_node);
+      switch (control_type) {
+        case "r_btn":
+          $(".rotationAxisControllers").remove();
+          $(`#T_${selected_node}`).append(createRotationAxis(axis.x));
+          $(`#T_${selected_node}`).append(createRotationAxis(axis.y));
+          $(`#T_${selected_node}`).append(createRotationAxis(axis.z));
+          break;
+        case "t_btn":
+          $(".translationAxisControllers").remove();
+          $(`#T_${selected_node}`).append(createTranslationAxis(""));
+          break;
+        default:
+          break;
+      }
     },
   });
   object_counter++;
 };
+function applyRotationGizmoTransformations() {
+  var node = document.getElementById("R_" + selected_node);
 
+  //incorporate the current rotation offset, interpreted globally, into the stored rotation value
+  var transformMatrix = currentGizmoRotationOffset.mult(currentGizmoRotation);
+  //set matrix value in column major format, as required by the MatrixTransform node
+  node.setFieldValue("matrix", transformMatrix.transpose());
+}
+function processRotationGizmoEvent(event, id) {
+  var sensorToWorldMatrix, rotationMatrixWorld;
+  if (event.fieldName === "rotation_changed") {
+    sensorToWorldMatrix = x3dom.fields.SFMatrix4f.parseRotation(
+      event.target.getAttribute("axisRotation")
+    );
+
+    rotationMatrixWorld = sensorToWorldMatrix.mult(event.value.toMatrix());
+    currentGizmoRotationOffset = rotationMatrixWorld.mult(
+      sensorToWorldMatrix.inverse()
+    );
+    applyRotationGizmoTransformations();
+  }
+  if (event.fieldName === "isActive" && event.value === false) {
+    currentGizmoRotation =
+      currentGizmoRotationOffset.mult(currentGizmoRotation);
+    currentGizmoRotationOffset = new x3dom.fields.SFMatrix4f();
+    applyRotationGizmoTransformations(id);
+  }
+}
 const removeShapeFromScene = (id) => {
   $(`#T_${id}`).remove();
   mytree = mytree.filter(
@@ -73,12 +146,10 @@ const creatUpdateShapeButton = (id) => {
   return `<button type='button' class='btn btn-primary btn-sm' onclick='updateShapeFromScene("${id}")'  data-bs-toggle="modal" data-bs-target="#shapeUpdate">U</button>`;
 };
 const updateShapeFromScene = (id) => {
-  console.log(id);
   $("#modeltitle").text(id);
   $.get(
     "shapes/cone.x3d",
     function (contents) {
-      console.log(contents);
       $("#modelbodydata").text(contents);
     },
     "text"
@@ -87,7 +158,7 @@ const updateShapeFromScene = (id) => {
 
 const createRotationAxis = (axis) => {
   return `
-  <group>
+  <group class="rotationAxisControllers">
   <cylinderSensor ${axis.autoOffset} ${axis.axisRotation} onoutputchange='processRotationGizmoEvent(event);'>
     </cylinderSensor>
     <transform>
@@ -104,3 +175,168 @@ const createRotationAxis = (axis) => {
 </group>
 `;
 };
+const createTranslationAxis = (axis) => {
+  return `
+  <group class="translationAxisControllers">
+  <planeSensor autoOffset='true' axisRotation='1 0 0 -1.57' minPosition='-6 0' maxPosition='6 0' onoutputchange='processTranslationGizmoEvent(event)'>
+  </planeSensor>
+  <transform id='translationHandleTransform'>
+    <transform translation='0 0 0' rotation='0 0 0 0'>	
+
+    <transform translation='4.25 0 0' rotation='1 0 90 -1.57' scale="0.5 0.5 0.5">
+    <shape DEF='CONE_CAP'>
+      <appearance DEF='CYAN_MAT'><material diffuseColor='0.3 0.3 1'></material></appearance>
+      <cone height='1'></cone>
+    </shape>
+  </transform>
+  <transform rotation='1 0 90 -1.57' scale="0.3 4 0.3">							
+    <shape>
+      <appearance USE='CYAN_MAT'></appearance>
+      <cylinder></cylinder>
+    </shape>
+  </transform>
+    </transform>						
+  </transform>				
+  </group>`;
+};
+function processTranslationGizmoEvent(event) {
+  var sensorToWorldMatrix, translationValue;
+  if (event.fieldName === "translation_changed") {
+    sensorToWorldMatrix = x3dom.fields.SFMatrix4f.parseRotation(
+      event.target.getAttribute("axisRotation")
+    );
+    translationValue = sensorToWorldMatrix.multMatrixVec(event.value);
+    document
+      .getElementById(`T_${selected_node}`)
+      .setFieldValue("translation", translationValue);
+    $("#t_x").val(translationValue.x);
+    $("#t_y").val(translationValue.y);
+    $("#t_z").val(translationValue.z);
+  }
+}
+$(".view").click(function () {
+  if (this.id === control_type) return;
+  switch (this.id) {
+    case "r_btn":
+      if (control_type == "t_btn") $(".translationAxisControllers").remove();
+      $(`#T_${selected_node}`).append(createRotationAxis(axis.x));
+      $(`#T_${selected_node}`).append(createRotationAxis(axis.y));
+      $(`#T_${selected_node}`).append(createRotationAxis(axis.z));
+      console.log("rotation");
+      control_type = this.id;
+      break;
+    case "t_btn":
+      if (control_type == "r_btn") $(".rotationAxisControllers").remove();
+      $(`#T_${selected_node}`).append(createTranslationAxis(""));
+      console.log("translation");
+      control_type = this.id;
+      break;
+    default:
+      console.log("none");
+      if (control_type == "r_btn") $(".rotationAxisControllers").remove();
+      if (control_type == "t_btn") $(".translationAxisControllers").remove();
+      control_type = this.id;
+      break;
+  }
+  $(".view").removeClass("btn-primary").addClass("btn-secondary");
+  $(this).removeClass("btn-secondary").addClass("btn-primary");
+});
+const controlHandler = () => {
+  console.log($(this));
+  $(this).addClass("btn-sm");
+};
+$(".input").change(function () {
+  console.log("hi");
+  console.log($(this).val);
+});
+$("#r_x").on("change", function () {
+  console.log("hi");
+});
+function printHello() {
+  console.log("hello");
+}
+
+var event = new Event("input");
+
+// document.getElementById("t_x").addEventListener("input", function () {
+//   const coordinates = $(`#T_${selected_node}`).attr("translation");
+//   const coord = coordinates.split(",");
+//   $(`#T_${selected_node}`).attr(
+//     "translation",
+//     `${this.value},${coord[1]},${coord[2]}`
+//   );
+// });
+// document.getElementById("t_y").addEventListener("input", function () {
+//   const coordinates = $(`#T_${selected_node}`).attr("translation");
+//   const coord = coordinates.split(",");
+//   $(`#T_${selected_node}`).attr(
+//     "translation",
+//     `${coord[0]},${this.value},${coord[2]}`
+//   );
+// });
+// document.getElementById("t_z").addEventListener("input", function () {
+//   const coordinates = $(`#T_${selected_node}`).attr("translation");
+//   const coord = coordinates.split(",");
+//   $(`#T_${selected_node}`).attr(
+//     "translation",
+//     `${coord[0]},${coord[1]},${this.value}`
+//   );
+// });
+// document.getElementById("r_z").addEventListener("input", function () {
+//   // console.log(this.value);
+//   // const coordinates = $(`#T_${selected_node}`).attr("translation");
+//   // const coord = coordinates.split(",");
+//   // $(`#T_${selected_node}`).attr(
+//   //   "translations",
+//   //   `${coord[0]},${coord[1]},${this.value}`
+//   // );
+// });
+
+var checkExist = setInterval(function () {
+  console.log("hi");
+  if ($("#x3dom-x3dElement-canvas").length) {
+    console.log("Exists!");
+    const targetNode = document.getElementById("x3dom-x3dElement-canvas");
+    const config = { attributes: true };
+    const callback = function (mutationsList, observer) {
+      for (const mutation of mutationsList) {
+        if (mutation.type === "attributes") {
+          const canvas = document.getElementById("x3dom-x3dElement-canvas");
+          const canvas_class = canvas.getAttribute("class");
+          if (canvas_class == "x3dom-canvas x3dom-canvas-mousedown")
+            clicked = true;
+          else if (canvas_class == "x3dom-canvas") {
+            if (clicked) {
+              const coordinates = $(`#T_${selected_node}`).attr("translation");
+              console.log(
+                "befor",
+                $(`#T_${selected_node}`).attr("translation")
+              );
+              const x = $(`#t_x`).val();
+              const y = $(`#t_y`).val();
+              const z = $(`#t_z`).val();
+              console.log(x, y, z);
+              // const coord = coordinates.split(",");
+              $(`#T_${selected_node}`).attr("translation", `${x},${y},${z}`);
+              $(`#translationHandleTransform`).attr(
+                "translation",
+                `${x},${y},${z}`
+              );
+              console.log(
+                "after",
+                $(`#T_${selected_node}`).attr("translation")
+              );
+              clicked = null;
+            }
+          }
+        }
+      }
+    };
+
+    // Create an observer instance linked to the callback function
+    const observer = new MutationObserver(callback);
+    observer.observe(targetNode, config);
+
+    clearInterval(checkExist);
+  }
+}, 100);

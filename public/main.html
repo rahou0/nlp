@@ -29,10 +29,15 @@
         </div>
       <div id="middle">
         <div id="top">
-          <p>NAvigation View</p>
-          <button type="button" class="btn btn-primary btn-sm">Rotate</button>
-          <button type="button" class="btn btn-primary btn-sm">Translate</button>
-
+          <p>Selected Shape: <span  id="selected_shape">none</span></p>
+          <div class="btn-group" role="group" aria-label="Basic example">
+            <!-- <button  onclick="controlHandler()" type="button"  class="btn btn-success btn-sm">Rotate</button> -->
+            <!-- <button onclick="controlHandler()"  type="button" class="btn btn-light btn-sm">Translate</button> -->
+            <!-- <button onclick="controlHandler()"  type="button" class="btn btn-light btn-sm">None</button> -->
+            <button id="r_btn" type="button"  class="btn btn-secondary btn-sm view">Rotate</button>
+            <button  id="t_btn" type="button" class="btn btn-secondary btn-sm view">Translate</button>
+            <button id="n_btn"  type="button" class="btn btn-primary btn-sm view">None</button>
+          </div>
         </div>
         <div id="center">
           <x3d
@@ -46,11 +51,16 @@
                 orientation="-0.66475 0.73173 0.15059 0.81072"
               >
               </viewpoint>
-              <!-- <transform id="shapeTranslation">
+              <!-- <transform id="shapeTranslationTest" translation="10,0,1" rotation="0,0,0">
                 <matrixTransform id="shapeRotation">
-                  <inline url="/shapes/teapot.x3d"></inline>
+                  <inline url="/shapes/cone.x3d"></inline>
                 </matrixTransform>
-              </transform> -->
+              </transform>  -->
+              <transform id="shapeTranslationTest" translation="10,0,1" rotation="1 1 2 90">
+                <inline url="/shapes/cone.x3d"></inline>
+
+              </transform>
+
             
               <NavigationInfo type="none"> </NavigationInfo>
             </scene>
@@ -68,7 +78,17 @@
       </div>
       <!-- middle -->
       <div id="right">
+        <canvas id="hicanvas"></canvas>
         <h5>Shape params</h5>
+        <h5>Translation</h5>
+        <span>X</span><input type="number" width="10px" id="t_x"/> <br>
+        <span>Y</span><input type="number" width="10px"  id="t_y"/> <br>
+        <span>Z</span><input type="number" width="10px"  id="t_z"/> <br>
+        <h5>Rotation</h5>
+        <span>X</span><input type="number" width="10px"  id="r_x"/> <br>
+        <span>Y</span><input type="number" width="10px"  id="r_y"/> <br>
+        <span>Z</span><input type="number" width="10px"  id="r_z"/> <br>
+        <span>Angle</span><input type="number" width="10px"  id="r_a"/> <br>
       </div>
       <!-- Modal -->
       <div class="modal fade" id="shapeUpdate" tabindex="-1" aria-labelledby="modeltitle" aria-hidden="true">
@@ -98,8 +118,11 @@
     integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
     crossorigin="anonymous"
   ></script>
+  <script>
+
+  </script>
     <script src="main.js"></script>
-    <script src="rotationController.js"></script>
+    <!-- <script src="rotationController.js"></script> -->
 
   </body>
 </html>
